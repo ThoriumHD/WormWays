@@ -1,0 +1,27 @@
+services:
+  api:
+    build: ./api
+    command: npm run start
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api:/app
+    working_dir: /app
+  server:
+    build: ./server
+    command: npm run start
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./server:/app
+    working_dir: /app
+  client:
+    build: ./client
+    command: npm run preview
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+    working_dir: /app
+
+

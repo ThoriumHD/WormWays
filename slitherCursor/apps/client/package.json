@@ -1,0 +1,23 @@
+{
+  "name": "@apps/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n proto,client \"pnpm --filter @packages/proto dev\" \"vite\"",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview --port 5173",
+    "lint": "eslint . --ext .ts --max-warnings 0",
+    "format": "prettier -w ."
+  },
+  "dependencies": {
+    "pixi.js": "^8.3.4",
+    "@packages/proto": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "vite": "^5.4.8"
+  }
+}
+
+
