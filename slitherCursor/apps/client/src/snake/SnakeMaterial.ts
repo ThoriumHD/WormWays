@@ -5,7 +5,8 @@ export type Rgb = { r: number; g: number; b: number };
 export type Hsl = { h: number; s: number; l: number };
 
 // A single “skin” – you can add more later.
-export const PURPLE = 0x8c7bff;
+
+export const BLUE = 0x007ba7;
 
 type Key = string;
 const cache = new Map<Key, PIXI.Texture>();
@@ -15,7 +16,8 @@ const cache = new Map<Key, PIXI.Texture>();
 const INNER_LIFT   = +0.12;                 // lighten center relative to base
 const OUTER_DROP   = -0.08;                 // darken rim relative to base
 const GLOSS_GAIN   = 0.16;                  // off-center gloss strength
-const GLOSS_ANG    = 30 * Math.PI / 180;    // gloss azimuth (from +X toward +Y)
+const GLOSS_ANG    = 0 * Math.PI / 180;    // gloss azimuth (from +X toward +Y)
+
 
 // Soft outer glow (white, *behind* the bead)
 const OUTER_GLOW_ALPHA = 0.12;
@@ -182,7 +184,7 @@ export class SnakeMaterial {
   ): PIXI.Texture {
     const diam = Math.max(2, Math.round(radius * 2)); // ensure >= 2px
     // bump a version suffix so caches from "rim" builds don't get reused
-    const key: Key = `${baseHex}_${diam}_v2`;
+    const key: Key = `${baseHex}_${diam}_v3`;
     const hit = cache.get(key);
     if (hit) return hit;
 

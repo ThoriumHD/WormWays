@@ -2,12 +2,11 @@
 export type Vec2 = { x: number; y: number };
 
 export const SNAKE = {
-  radius: 19,            // px
-  headScale: 1.2,        // slither-style: no head bulge
-  overlap: 0.55,         // center spacing = overlap * radius (dense overlap for continuous tube)
-  turnRate: 3.8,         // rad / sec
-  speed: 160,            // px / sec
-  boostSpeed: 300,       // px / sec
+  radius: 23,            // px
+  overlap: 0.4,         // center spacing = overlap * radius (dense overlap for continuous tube)
+  turnRate: 4.5,         // rad / sec
+  speed: 250,            // px / sec
+  boostSpeed: 625,       // px / sec
   historyMin: 24,        // more points => smoother spline
   historyMax: 1024,      // big enough so boost never outruns history
   resampleDt: 1 / 64,    // finer arc-length sampling
@@ -53,12 +52,19 @@ export class SnakeBody {
   }
 
   step(dt: number, desiredAngle: number) {
-    // clamp turn
-    let da = ((desiredAngle - this.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
-    const maxDa = SNAKE.turnRate * dt;
-    if (da > maxDa) da = maxDa;
-    if (da < -maxDa) da = -maxDa;
-    this.angle += da;
+    // helpers (put these at file top-level or inside the class)
+const angDiff = (t: number, a: number) =>
+  Math.atan2(Math.sin(t - a), Math.cos(t - a));        // shortest signed delta in (-π, π]
+const normPi = (a: number) => Math.atan2(Math.sin(a), Math.cos(a)); // normalize to (-π, π]
+
+// clamp turn using shortest delta
+let da = angDiff(desiredAngle, this.angle);
+const maxDa = SNAKE.turnRate * dt;
+if (da > maxDa) da = maxDa;
+if (da < -maxDa) da = -maxDa;
+
+this.angle = normPi(this.angle + da);
+
 
     const speed = this.boosting ? SNAKE.boostSpeed : SNAKE.speed;
     const v = dir(this.angle);
