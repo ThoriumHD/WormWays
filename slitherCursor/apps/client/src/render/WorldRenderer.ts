@@ -9,16 +9,19 @@ export class WorldRenderer {
   private snakes = new Graphics();
   private pellets = new Graphics();
   private hud = new Text({ text: '', style: { fill: '#ffffff', fontSize: 14 } });
+  private moneyDisplays = new Container();
 
   private cam: Camera = { x: 0, y: 0, smoothX: 0, smoothY: 0 };
   public myId: number = 0;
   private score: number = 0;
   private ping: number = 0;
+  private playerMoney: Map<number, number> = new Map();
 
   constructor() {
     this.container.addChild(this.bg);
     this.container.addChild(this.pellets);
     this.container.addChild(this.snakes);
+    this.container.addChild(this.moneyDisplays);
     this.hud.x = 10; this.hud.y = 10;
     this.container.addChild(this.hud);
   }
@@ -36,6 +39,7 @@ export class WorldRenderer {
     this.drawBackground();
     this.drawPellets(state);
     this.drawSnakes(state);
+    this.drawMoneyDisplays(state);
     this.hud.text = `Score: ${this.score}   Ping: ${this.ping} ms`;
   }
 
@@ -92,6 +96,62 @@ export class WorldRenderer {
     const h = (c % 1024) / 1024 * 360;
     const col = this.hslToHex(h, 80, 55);
     return col;
+  }
+
+  private drawMoneyDisplays(state: S2CState) {
+    // Clear existing money displays
+    this.moneyDisplays.removeChildren();
+    
+    // Draw money displays for other players
+    for (const p of state.players) {
+      if (p.id === this.myId) continue; // skip our own snake
+      
+      const money = this.playerMoney.get(p.id) || Math.floor(Math.random() * 1000) + 100; // placeholder money
+      const head = this.worldToScreen(p.headX, p.headY);
+      
+      // Create money display
+      const moneyText = new Text({
+        text: `$${money.toLocaleString()}`,
+        style: {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: 14,
+          fill: 0xFFFFFF,
+          fontWeight: 'bold',
+          stroke: 0x000000,
+          strokeThickness: 2,
+          dropShadow: true,
+          dropShadowColor: 0x000000,
+          dropShadowBlur: 3,
+          dropShadowAngle: Math.PI / 4,
+          dropShadowDistance: 1,
+        }
+      });
+      moneyText.anchor.set(0.5);
+      moneyText.position.set(head.x, head.y - 35);
+      
+      // Create background
+      const background = new Graphics();
+      const bounds = moneyText.getBounds();
+      const padding = 6;
+      background.beginFill(0x000000, 0.7);
+      background.drawRoundedRect(
+        bounds.x - padding,
+        bounds.y - padding,
+        bounds.width + padding * 2,
+        bounds.height + padding * 2,
+        8
+      );
+      background.endFill();
+      
+      // Add to container
+      this.moneyDisplays.addChild(background);
+      this.moneyDisplays.addChild(moneyText);
+    }
+  }
+
+  // Method to update player money (for server sync)
+  setPlayerMoney(playerId: number, amount: number) {
+    this.playerMoney.set(playerId, amount);
   }
 
   private hslToHex(h: number, s: number, l: number) {
