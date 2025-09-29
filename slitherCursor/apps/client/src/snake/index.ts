@@ -6,16 +6,13 @@ import { Camera } from '../view/Camera';
 
 export class Snake {
   public body = new SnakeBody();
-  public renderer: SnakeRenderer;
+  public renderer = new SnakeRenderer();
   public sim = new ClientSim();
   public position: Vec2 = { x: 0, y: 0 };
   public angle = 0;
   public score = 20;
-  public money = 0;
 
-  constructor(app: any, initialMoney: number = 0) {
-    this.renderer = new SnakeRenderer(app, initialMoney);
-    this.money = initialMoney;
+  constructor() {
     this.body.maxLenFromScore = this.score * 8;
   }
 
@@ -28,9 +25,6 @@ export class Snake {
     this.position = state.position;
     this.angle = state.angle;
     this.score = state.score;
-    
-    // Update money in renderer to keep it in sync
-    this.renderer.setMoney(this.money);
     
     // Calculate velocity for eye direction
     const speed = boost ? 180 : 140;
@@ -46,9 +40,6 @@ export class Snake {
     // Update renderer with camera and velocity
     const headCarry = this.sim.getHeadCarry();
     this.renderer.updateBody(this.body.points, this.score, camera, velocity, headCarry);
-    
-    // Update renderer tick for money display
-    this.renderer.tick(dt);
   }
   
   reconcile(serverState: any, myId: number) {
@@ -74,33 +65,5 @@ export class Snake {
   
   getMaterial() {
     return this.renderer.getMaterial();
-  }
-
-  // Money management methods
-  addMoney(amount: number): void {
-    this.money += amount;
-    this.renderer.addMoney(amount);
-  }
-
-  spendMoney(amount: number): boolean {
-    if (this.money >= amount) {
-      this.money -= amount;
-      this.renderer.setMoney(this.money);
-      return true;
-    }
-    return false;
-  }
-
-  getMoney(): number {
-    return this.money;
-  }
-
-  setMoney(amount: number): void {
-    this.money = amount;
-    this.renderer.setMoney(amount);
-  }
-
-  showMoneyDisplay(): void {
-    this.renderer.showMoneyDisplay();
   }
 }
