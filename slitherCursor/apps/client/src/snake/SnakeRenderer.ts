@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { SnakeBody, SNAKE, Vec2 } from './SnakeBody';
 import { SnakeMaterial, BLUE } from './SnakeMaterial';
+import { MoneyDisplay, MoneySystem } from '../money';
 
 // --------------------------------------------------------------------------------------
 const BOOST = {
@@ -63,6 +64,10 @@ export class SnakeRenderer extends PIXI.Container {
   private pulseLayer: PIXI.Container = new PIXI.Container();
   private pulseSprites: PIXI.Sprite[] = [];
 
+  // Money system
+  private moneySystem: MoneySystem;
+  private moneyDisplay: MoneyDisplay;
+
   private readonly fallbackTint = 0x8C7BFF;
   private readonly fallbackTintGlow = 0xE6E0FF;
   private palette = BLUE;
@@ -70,9 +75,13 @@ export class SnakeRenderer extends PIXI.Container {
 
 
 
-  constructor(app: PIXI.Application) {
+  constructor(app: PIXI.Application, initialMoney: number = 1.00) {
     super();
     this.app = app;
+
+    // Initialize money system with $1.00 default
+    this.moneySystem = new MoneySystem(initialMoney);
+    this.moneyDisplay = new MoneyDisplay(this.moneySystem);
 
     // glow layer at the bottom
     this.addChild(this.glowLayer);
@@ -84,11 +93,31 @@ export class SnakeRenderer extends PIXI.Container {
     this.leftEye = new PIXI.Graphics();
     this.rightEye = new PIXI.Graphics();
     this.addChild(this.leftEye, this.rightEye);
+
+    // money display (on top of everything)
+    this.addChild(this.moneyDisplay);
+    
+    // Ensure money display is on top
+    this.moneyDisplay.zIndex = 1000;
   }
 
-  tick(dt: number) {
+  tick(dt: number, headPosition?: { x: number; y: number }) {
     this.tClock += dt;
     this.lastDt = dt;
+    
+    // Update money display - use head sprite position if available, otherwise use provided position
+    if (this.moneyDisplay) {
+      let position = headPosition;
+      if (this.bodySprites.length > 0 && this.bodySprites[0].visible) {
+        position = {
+          x: this.bodySprites[0].position.x,
+          y: this.bodySprites[0].position.y
+        };
+      }
+      if (position) {
+        this.moneyDisplay.update(dt, position);
+      }
+    }
   }
 
   renderSnake(body: SnakeBody) {
@@ -335,6 +364,41 @@ const Oy = headCenter.y + ox * F.y + oy * U.y;
     } catch {
       return PIXI.Texture.WHITE;
     }
+  }
+
+  // Get the current head position for money display
+  private getHeadPosition(): { x: number; y: number } {
+    // Try to get head position from the first body sprite if available
+    if (this.bodySprites.length > 0 && this.bodySprites[0].visible) {
+      return {
+        x: this.bodySprites[0].position.x,
+        y: this.bodySprites[0].position.y
+      };
+    }
+    // Fallback to origin if no body sprites are available
+    return { x: 0, y: 0 };
+  }
+
+  // Public methods to access money system
+  getMoneySystem(): MoneySystem {
+    return this.moneySystem;
+  }
+
+  addMoney(amount: number): void {
+    this.moneySystem.addMoney(amount);
+  }
+
+  getMoney(): number {
+    return this.moneySystem.getMoney();
+  }
+
+  setMoney(amount: number): void {
+    this.moneySystem.setMoney(amount);
+  }
+
+  // Force show money display
+  showMoneyDisplay(): void {
+    this.moneyDisplay.forceShow();
   }
 }
 
