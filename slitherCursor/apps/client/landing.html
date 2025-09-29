@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WormWays - Skill-Based Snake Gaming</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: #0a0f1a;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(74, 144, 226, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(74, 144, 226, 0.05) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 0 60px 0;
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 52px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            margin-bottom: 8px;
+        }
+
+        .logo .highlight {
+            color: #4a90e2;
+        }
+
+        .logo-subtitle {
+            font-size: 16px;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 600;
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            min-height: 600px;
+        }
+
+        /* Left Sidebar */
+        .left-sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Right Sidebar */
+        .right-sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Center Game Area */
+        .center-game {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Sidebar Sections */
+        .sidebar-section {
+            background: rgba(16, 24, 40, 0.7);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.1);
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .section-icon {
+            color: #4a90e2;
+            font-size: 18px;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        /* Live indicator */
+        .live-indicator {
+            background: #4CAF50;
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        /* Leaderboard */
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.05);
+        }
+
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .leaderboard-rank {
+            color: #8892b0;
+            font-size: 14px;
+            width: 20px;
+        }
+
+        .leaderboard-name {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .leaderboard-amount {
+            color: #4a90e2;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .view-full-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 8px;
+            color: #4a90e2;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .view-full-btn:hover {
+            background: rgba(74, 144, 226, 0.2);
+        }
+
+        /* Social Section */
+        .social-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #8892b0;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .online-count {
+            background: rgba(74, 144, 226, 0.2);
+            color: #4a90e2;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .social-empty {
+            text-align: center;
+            padding: 30px 0;
+            color: #8892b0;
+        }
+
+        .social-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(74, 144, 226, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 28px;
+            color: #4a90e2;
+        }
+
+        .social-text {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .add-friends-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 8px;
+            color: #4a90e2;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-friends-btn:hover {
+            background: rgba(74, 144, 226, 0.2);
+        }
+
+        /* Game Interface */
+        .game-interface {
+            background: rgba(16, 24, 40, 0.8);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            width: 100%;
+        }
+
+        .player-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .player-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .edit-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(74, 144, 226, 0.5);
+            border-radius: 6px;
+            color: #4a90e2;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edit-btn:hover {
+            background: rgba(74, 144, 226, 0.1);
+        }
+
+        /* Game Controls */
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            background: rgba(16, 24, 40, 0.8);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(74, 144, 226, 0.1);
+            border-color: rgba(74, 144, 226, 0.5);
+        }
+
+        /* Join Game Button */
+        .join-game-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            border: none;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .join-game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.3);
+        }
+
+        /* Game Stats */
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #4a90e2;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Game Features */
+        .game-features {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(74, 144, 226, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(74, 144, 226, 0.1);
+        }
+
+        .feature-icon {
+            color: #4a90e2;
+            font-size: 16px;
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        /* Balance Section */
+        .balance-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .balance-actions-header {
+            display: flex;
+            gap: 12px;
+            margin-left: auto;
+        }
+
+        .balance-action-btn {
+            background: none;
+            border: none;
+            color: #8892b0;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .balance-action-btn:hover {
+            color: #4a90e2;
+        }
+
+        .balance-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 700;
+            color: #4a90e2;
+            margin-bottom: 5px;
+        }
+
+        .balance-currency {
+            font-size: 12px;
+            color: #8892b0;
+        }
+
+        .balance-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .balance-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .balance-btn.primary {
+            background: #4CAF50;
+            color: #ffffff;
+        }
+
+        .balance-btn.primary:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .balance-btn.secondary {
+            background: rgba(74, 144, 226, 0.1);
+            color: #4a90e2;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        .balance-btn.secondary:hover {
+            background: rgba(74, 144, 226, 0.2);
+        }
+
+        /* Customize Section */
+        .snake-preview {
+            height: 140px;
+            background: rgba(16, 24, 40, 0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .snake-container {
+            position: relative;
+            width: 120px;
+            height: 40px;
+        }
+
+        .snake-segment {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            border-radius: 50%;
+            position: absolute;
+            animation: snakeWave 2s ease-in-out infinite;
+        }
+
+        .snake-head {
+            background: linear-gradient(135deg, #ffffff 0%, #4a90e2 100%);
+            box-shadow: 0 0 8px rgba(74, 144, 226, 0.4);
+            z-index: 2;
+        }
+
+        .snake-segment:nth-child(1) { left: 0px; animation-delay: 0s; }
+        .snake-segment:nth-child(2) { left: 20px; animation-delay: 0.1s; }
+        .snake-segment:nth-child(3) { left: 40px; animation-delay: 0.2s; }
+        .snake-segment:nth-child(4) { left: 60px; animation-delay: 0.3s; }
+        .snake-segment:nth-child(5) { left: 80px; animation-delay: 0.4s; }
+
+        @keyframes snakeWave {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .change-appearance-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(74, 144, 226, 0.1);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 8px;
+            color: #4a90e2;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .change-appearance-btn:hover {
+            background: rgba(74, 144, 226, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+            }
+            
+            .left-sidebar,
+            .right-sidebar {
+                width: 100%;
+                max-width: 400px;
+                flex-direction: row;
+                gap: 20px;
+            }
+            
+            .left-sidebar .sidebar-section,
+            .right-sidebar .sidebar-section {
+                flex: 1;
+            }
+            
+            .center-game {
+                order: -1;
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 36px;
+            }
+            
+            .main-container {
+                padding: 0 15px;
+                gap: 30px;
+            }
+            
+            .left-sidebar,
+            .right-sidebar {
+                flex-direction: column;
+            }
+            
+            .game-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            WORM<span class="highlight">WAYS</span>
+        </div>
+        <div class="logo-subtitle">Skill-Based Snake Gaming</div>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <!-- Leaderboard -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <span class="section-icon">🏆</span>
+                    Leaderboard
+                    <span class="live-indicator">Live</span>
+                </div>
+                <div class="section-content">
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-left">
+                            <span class="leaderboard-rank">1.</span>
+                            <span class="leaderboard-name">SnakeMaster</span>
+                        </div>
+                        <span class="leaderboard-amount">$1,234.56</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-left">
+                            <span class="leaderboard-rank">2.</span>
+                            <span class="leaderboard-name">WormWays</span>
+                        </div>
+                        <span class="leaderboard-amount">$987.65</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-left">
+                            <span class="leaderboard-rank">3.</span>
+                            <span class="leaderboard-name">CoinCollector</span>
+                        </div>
+                        <span class="leaderboard-amount">$543.21</span>
+                    </div>
+                    <button class="view-full-btn">View Full Leaderboard</button>
+                </div>
+            </div>
+
+            <!-- Social -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <span class="section-icon">👥</span>
+                    Social
+                    <div class="social-status">
+                        <button class="refresh-btn">🔄 Refresh</button>
+                        <span class="online-count">0 playing</span>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div class="social-empty">
+                        <div class="social-icon">👤</div>
+                        <div class="social-text">No friends... add some!</div>
+                        <button class="add-friends-btn">Add Friends</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Game Area -->
+        <div class="center-game">
+            <div class="game-interface">
+                <div class="player-section">
+                    <div class="player-info">
+                        <div class="player-avatar">🐍</div>
+                        <div class="player-name">Player</div>
+                    </div>
+                    <button class="edit-btn">
+                        <span>✏️</span>
+                        Edit
+                    </button>
+                </div>
+
+                <div class="game-controls">
+                    <button class="control-btn">
+                        <span>🎮</span>
+                        Practice
+                    </button>
+                    <button class="control-btn">
+                        <span>🏆</span>
+                        Competitive
+                    </button>
+                </div>
+
+                <button class="join-game-btn" onclick="startGame()">
+                    ▶ JOIN GAME
+                </button>
+
+                <div class="game-stats">
+                    <div class="stat">
+                        <div class="stat-number">1</div>
+                        <div class="stat-label">Players Online</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">$0.00</div>
+                        <div class="stat-label">Total Winnings</div>
+                    </div>
+                </div>
+
+                <div class="game-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">💰</span>
+                        <span class="feature-text">Collect coins to earn money</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🍎</span>
+                        <span class="feature-text">Eat food to grow longer</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🧲</span>
+                        <span class="feature-text">Magnetic collectables</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar">
+            <!-- Balance -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <div class="balance-header">
+                        <span class="section-icon">💰</span>
+                        Balance
+                        <div class="balance-actions-header">
+                            <button class="balance-action-btn">
+                                <span>📋</span>
+                                Copy Address
+                            </button>
+                            <button class="balance-action-btn">
+                                <span>🔄</span>
+                                Refresh Balance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div class="balance-display">
+                        <div class="balance-amount">$1.00</div>
+                        <div class="balance-currency">Starting Balance</div>
+                    </div>
+                    <div class="balance-buttons">
+                        <button class="balance-btn primary">Add Funds</button>
+                        <button class="balance-btn secondary">Cash Out</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customize -->
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <span class="section-icon">🎨</span>
+                    Customize
+                </div>
+                <div class="section-content">
+                    <div class="snake-preview">
+                        <div class="snake-container">
+                            <div class="snake-segment snake-head"></div>
+                            <div class="snake-segment"></div>
+                            <div class="snake-segment"></div>
+                            <div class="snake-segment"></div>
+                            <div class="snake-segment"></div>
+                        </div>
+                    </div>
+                    <button class="change-appearance-btn">Change Appearance</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startGame() {
+            // Redirect to the game
+            window.location.href = './index.html';
+        }
+
+        // Add interactive effects
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (!this.classList.contains('join-game-btn')) {
+                    e.preventDefault();
+                }
+                // Add click animation
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Snake animation on hover
+        document.querySelector('.snake-preview').addEventListener('mouseenter', () => {
+            document.querySelectorAll('.snake-segment').forEach((segment, index) => {
+                segment.style.animationDuration = '1s';
+            });
+        });
+
+        document.querySelector('.snake-preview').addEventListener('mouseleave', () => {
+            document.querySelectorAll('.snake-segment').forEach((segment, index) => {
+                segment.style.animationDuration = '2s';
+            });
+        });
+
+        // Update online count (mock data)
+        function updateOnlineCount() {
+            const onlineCount = Math.floor(Math.random() * 50) + 1;
+            document.querySelector('.online-count').textContent = `${onlineCount} playing`;
+        }
+
+        // Update stats periodically
+        setInterval(updateOnlineCount, 5000);
+        updateOnlineCount();
+    </script>
+</body>
+</html>
