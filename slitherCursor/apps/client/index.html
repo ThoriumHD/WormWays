@@ -1,0 +1,808 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SlitherMoney - Skill-Based Gaming</title>
+    <style>
+      html, body, #app { height: 100%; margin: 0; background: #0b0f1a; }
+      #hud { position: fixed; top: 10px; left: 10px; color: #fff; font-family: system-ui, sans-serif; z-index: 1000; }
+      
+      /* Landing page styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --hex-tile-size: 500px;
+        --hex-animation-duration: 20s;
+        --hex-opacity: 0.4;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+        color: #000000;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Loading screen */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 1;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      #loading-screen.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(74, 144, 226, 0.2);
+        border-top: 3px solid #4A90E2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+
+      .loading-text {
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0.8;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      #landing {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 999;
+        background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+        opacity: 0;
+        transition: opacity 0.6s ease-in-out;
+      }
+
+      #landing.fade-in {
+        opacity: 1;
+      }
+
+      /* Landing page elements start hidden and fade in */
+      #landing .container {
+        opacity: 0;
+        transition: opacity 0.8s ease-in-out 0.3s; /* Delay after background fades in */
+      }
+
+      #landing.fade-in .container {
+        opacity: 1;
+      }
+
+      #landing.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #game-container {
+        display: block;
+        opacity: 0;
+        transition: opacity 0.6s ease-in-out;
+      }
+
+      #game-container.fade-in {
+        opacity: 1;
+      }
+
+      #game-container.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Game Over Screen */
+      #game-over {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 999;
+        background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
+        opacity: 0;
+        transition: opacity 0.6s ease-in-out;
+      }
+
+      #game-over.fade-in {
+        opacity: 1;
+      }
+
+      #game-over.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Game Over Screen elements start hidden and fade in */
+      #game-over .container {
+        opacity: 0;
+        transition: opacity 0.8s ease-in-out 0.3s; /* Delay after background fades in */
+      }
+
+      #game-over.fade-in .container {
+        opacity: 1;
+      }
+
+      /* Game Over specific styles */
+      .game-over-title {
+        font-size: 64px;
+        font-weight: 900;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #ff4444 0%, #ff6666 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: -2px;
+        line-height: 0.9;
+        text-shadow: 0 0 30px rgba(255, 68, 68, 0.3);
+        animation: gameOverGlow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes gameOverGlow {
+        from {
+          text-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+        }
+        to {
+          text-shadow: 0 0 40px rgba(255, 68, 68, 0.8);
+        }
+      }
+
+      .game-over-subtitle {
+        font-size: 18px;
+        font-weight: 500;
+        color: #cccccc;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 40px;
+      }
+
+      .score-section {
+        margin-bottom: 40px;
+      }
+
+      .final-score {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .score-number {
+        font-size: 72px;
+        font-weight: 900;
+        color: #87ceeb;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(135, 206, 235, 0.5);
+      }
+
+      .score-label {
+        font-size: 16px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 600;
+      }
+
+      .game-over-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        margin: 40px 0;
+      }
+
+      .game-over-actions .join-game-btn {
+        margin: 0;
+        padding: 18px 50px;
+        font-size: 18px;
+      }
+
+      .game-over-actions .btn-outline {
+        padding: 12px 30px;
+        font-size: 16px;
+      }
+
+      /* Hex tile background */
+      .hex-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 100%;
+        z-index: -1;
+        background-image: url('/assets/hex-tile.png');
+        background-repeat: repeat;
+        background-size: var(--hex-tile-size) auto;
+        animation: slideHex var(--hex-animation-duration) linear infinite;
+        opacity: var(--hex-opacity);
+      }
+
+      @keyframes slideHex {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* Header */
+      .header {
+        padding: 20px 0;
+        position: relative;
+        z-index: 100;
+      }
+
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 28px;
+        font-weight: 800;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: -1px;
+      }
+
+      .logo .highlight {
+        color: #87ceeb;
+      }
+
+      .wallet-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .wallet-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-size: 14px;
+      }
+
+      .balance {
+        font-size: 24px;
+        font-weight: 700;
+        color: #87ceeb;
+      }
+
+      .sol-text {
+        color: #ffffff;
+        font-size: 12px;
+      }
+
+      .wallet-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #87ceeb 0%, #4682b4 100%);
+        color: #000000;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(135, 206, 235, 0.3);
+      }
+
+      .btn-secondary {
+        background: rgba(135, 206, 235, 0.1);
+        color: #ffffff;
+        border: 1px solid rgba(135, 206, 235, 0.2);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(135, 206, 235, 0.15);
+        border-color: rgba(135, 206, 235, 0.3);
+      }
+
+      .btn-outline {
+        background: transparent;
+        color: #ffffff;
+        border: 2px solid rgba(135, 206, 235, 0.2);
+      }
+
+      .btn-outline:hover {
+        border-color: #87ceeb;
+        color: #87ceeb;
+      }
+
+      /* Main Content */
+      .main {
+        padding: 80px 0;
+        text-align: center;
+        position: relative;
+      }
+
+      .hero-section {
+        margin-bottom: 60px;
+      }
+
+      .hero-title {
+        font-size: 72px;
+        font-weight: 900;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #ffffff 0%, #87ceeb 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        letter-spacing: -2px;
+        line-height: 0.9;
+      }
+
+      .hero-subtitle {
+        font-size: 20px;
+        font-weight: 600;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 40px;
+      }
+
+      /* Game Interface */
+      .game-interface {
+        background: rgba(30, 30, 30, 0.95);
+        border-radius: 16px;
+        padding: 40px;
+        border: 1px solid rgba(135, 206, 235, 0.3);
+        backdrop-filter: blur(10px);
+        margin-bottom: 40px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .player-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .player-avatar {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .avatar-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #87ceeb 0%, #4682b4 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #000000;
+        font-size: 18px;
+      }
+
+      .player-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      /* Join Game Button */
+      .join-game-btn {
+        padding: 20px 60px;
+        font-size: 20px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #87ceeb 0%, #4682b4 100%);
+        color: #000000;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 30px 0;
+      }
+
+      .join-game-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(135, 206, 235, 0.4);
+      }
+
+      /* Game Stats */
+      .game-stats {
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        margin: 40px 0;
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 36px;
+        font-weight: 700;
+        color: #87ceeb;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .hero-title {
+          font-size: 48px;
+        }
+        
+        .game-over-title {
+          font-size: 48px;
+        }
+        
+        .score-number {
+          font-size: 56px;
+        }
+        
+        .game-stats {
+          gap: 30px;
+        }
+        
+        .wallet-section {
+          display: none;
+        }
+        
+        .nav {
+          justify-content: center;
+        }
+        
+        .game-over-actions .join-game-btn {
+          padding: 16px 40px;
+          font-size: 16px;
+        }
+        
+        .game-over-actions .btn-outline {
+          padding: 10px 25px;
+          font-size: 14px;
+        }
+      }
+
+      /* Glow effects */
+      .glow {
+        animation: glow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes glow {
+        from {
+          text-shadow: 0 0 20px rgba(135, 206, 235, 0.5);
+        }
+        to {
+          text-shadow: 0 0 30px rgba(135, 206, 235, 0.8);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- Landing Page -->
+    <div id="landing">
+      <div class="hex-background"></div>
+      
+      <div class="container">
+        <header class="header">
+          <nav class="nav">
+            <div class="logo">
+              SLITHER<span class="highlight">MONEY</span>
+            </div>
+            <div class="wallet-section">
+              <div class="wallet-info">
+                <div class="balance">$0.00</div>
+                <div class="sol-text">0.0000 SOL</div>
+              </div>
+              <div class="wallet-actions">
+                <button class="btn btn-primary">Add Funds</button>
+                <button class="btn btn-secondary">Cash Out</button>
+              </div>
+            </div>
+          </nav>
+        </header>
+
+        <main class="main">
+          <div class="hero-section">
+            <h1 class="hero-title glow">SLITHERMONEY</h1>
+            <p class="hero-subtitle">Skill-Based Gaming</p>
+          </div>
+
+          <div class="game-interface">
+            <div class="player-info">
+              <div class="player-avatar">
+                <div class="avatar-circle">0</div>
+                <div class="player-name">Anonymous</div>
+              </div>
+              <button class="btn btn-outline">Customize</button>
+            </div>
+
+            <button class="join-game-btn" onclick="startGame()">
+              ▶ JOIN GAME
+            </button>
+
+            <div class="game-stats">
+              <div class="stat">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Players In Game</div>
+              </div>
+              <div class="stat">
+                <div class="stat-number">$0</div>
+                <div class="stat-label">Global Player Winnings</div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over">
+      <div class="hex-background"></div>
+      
+      <div class="container">
+        <header class="header">
+          <nav class="nav">
+            <div class="logo">
+              SLITHER<span class="highlight">MONEY</span>
+            </div>
+          </nav>
+        </header>
+
+        <main class="main">
+          <div class="hero-section">
+            <h1 class="game-over-title">GAME OVER</h1>
+            <p class="game-over-subtitle">Are you really gonna let that slide!?</p>
+          </div>
+
+          <div class="game-interface">
+            <div class="score-section">
+              <div class="final-score">
+                <div class="score-number" id="final-score-display">0</div>
+                <div class="score-label">Final Score</div>
+              </div>
+            </div>
+
+            <div class="game-over-actions">
+              <button class="join-game-btn" onclick="playAgain()">
+                ▶ PLAY AGAIN
+              </button>
+              
+              <button class="btn btn-outline" onclick="returnToMainMenu()">
+                ← MAIN MENU
+              </button>
+            </div>
+
+            <div class="game-stats">
+              <div class="stat">
+                <div class="stat-number" id="players-count">0</div>
+                <div class="stat-label">Players Still Playing</div>
+              </div>
+              <div class="stat">
+                <div class="stat-number" id="global-winnings">$0</div>
+                <div class="stat-label">Global Player Winnings</div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+    <div id="app"></div>
+    <div id="hud"></div>
+    </div>
+
+    <script>
+      // Loading screen logic
+      window.addEventListener('load', () => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const landing = document.getElementById('landing');
+        
+        // Show loading screen for 0.7 seconds (30% faster), then transition
+        setTimeout(() => {
+          // First, fade out the loading screen
+          loadingScreen.classList.add('fade-out');
+          
+          // Show landing page background immediately (no delay)
+          landing.style.display = 'block';
+          
+          // Start fading in the landing page background
+          setTimeout(() => {
+            landing.classList.add('fade-in');
+          }, 50); // Small delay to ensure display is set
+          
+          // Hide loading screen after fade completes
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+          }, 300); // Match the CSS transition duration (0.3s)
+        }, 700); // Reduced from 1000ms to 700ms (30% faster)
+      });
+
+      function startGame() {
+        const landing = document.getElementById('landing');
+        const gameContainer = document.getElementById('game-container');
+        
+        // Start fade out animation
+        landing.classList.add('fade-out');
+        
+        // After fade out completes, hide landing and show game
+        setTimeout(() => {
+          landing.style.display = 'none';
+          gameContainer.classList.add('fade-in');
+          
+          // Dispatch custom event to notify main game loop
+          window.dispatchEvent(new CustomEvent('startGame'));
+        }, 800); // Match the CSS transition duration
+      }
+
+      function showGameOver(finalScore) {
+        console.log('[GameOver] showGameOver called with score:', finalScore);
+        const gameContainer = document.getElementById('game-container');
+        const gameOver = document.getElementById('game-over');
+        
+        if (!gameContainer || !gameOver) {
+          console.error('[GameOver] Missing DOM elements!');
+          return;
+        }
+        
+        // Update the final score display
+        document.getElementById('final-score-display').textContent = Math.floor(finalScore);
+        
+        console.log('[GameOver] Starting fade-in over death animation');
+        
+        // Ensure game container stays visible (keep death dots visible)
+        gameContainer.classList.remove('fade-out');
+        gameContainer.classList.add('fade-in');
+        gameContainer.style.opacity = '1'; // Force opacity to stay at 1
+        
+        // Show game over screen immediately (but invisible)
+        gameOver.style.display = 'block';
+        gameOver.classList.remove('fade-out');
+        gameOver.classList.remove('fade-in');
+        
+        // Start fade in animation for game over screen
+        setTimeout(() => {
+          console.log('[GameOver] Starting game over fade-in over death animation');
+          gameOver.classList.add('fade-in');
+        }, 100); // Small delay to ensure game over screen is ready
+        
+        // After fade in completes, hide game container
+        setTimeout(() => {
+          console.log('[GameOver] Hiding game container after fade-in');
+          gameContainer.style.display = 'none';
+        }, 800); // Match the CSS transition duration
+        
+        // Fallback: Force transition after maximum wait time to prevent getting stuck
+        setTimeout(() => {
+          if (gameContainer.style.display !== 'none') {
+            console.warn('[GameOver] Fallback: Forcing game over transition');
+            gameContainer.style.display = 'none';
+            gameOver.style.display = 'block';
+            gameOver.classList.remove('fade-out');
+            gameOver.classList.add('fade-in');
+          }
+        }, 2000); // 2 second fallback (allows for death animation + transition + buffer)
+      }
+
+      function playAgain() {
+        console.log('[GameOver] playAgain called');
+        const gameOver = document.getElementById('game-over');
+        const gameContainer = document.getElementById('game-container');
+        
+        if (!gameOver || !gameContainer) {
+          console.error('[GameOver] Missing DOM elements in playAgain!');
+          return;
+        }
+        
+        console.log('[GameOver] Starting crossfade transition back to game');
+        
+        // Show game container immediately (but invisible)
+        gameContainer.style.display = 'block';
+        gameContainer.classList.remove('fade-out');
+        gameContainer.classList.remove('fade-in');
+        
+        // Start fade out animation for game over
+        gameOver.classList.remove('fade-in');
+        gameOver.classList.add('fade-out');
+        
+        // Start fade in animation for game container immediately (crossfade)
+        setTimeout(() => {
+          console.log('[GameOver] Starting game fade-in');
+          gameContainer.classList.add('fade-in');
+        }, 100); // Small delay to ensure game container is ready
+        
+        // After fade out completes, hide game over
+        setTimeout(() => {
+          console.log('[GameOver] Hiding game over screen');
+          gameOver.style.display = 'none';
+          
+          console.log('[GameOver] Dispatching playAgain event');
+          // Dispatch custom event to notify main game loop
+          window.dispatchEvent(new CustomEvent('playAgain'));
+        }, 800); // Match the CSS transition duration
+      }
+
+      function returnToMainMenu() {
+        // Refresh the page to return to main menu
+        window.location.reload();
+      }
+
+      // Make functions globally available
+      window.startGame = startGame;
+      window.showGameOver = showGameOver;
+      window.playAgain = playAgain;
+      window.returnToMainMenu = returnToMainMenu;
+    </script>
+    <script type="module" id="game-script" style="display: none;" src="/src/main.ts"></script>
+  </body>
+  </html>
+
+
+

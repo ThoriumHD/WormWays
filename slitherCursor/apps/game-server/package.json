@@ -1,0 +1,24 @@
+{
+  "name": "slither-game-server",
+  "version": "1.0.0",
+  "description": "Multiplayer game server for Slither.io clone",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "@types/ws": "^8.5.12",
+    "@types/node": "^22.7.4"
+  }
+}
+
+
+
+
